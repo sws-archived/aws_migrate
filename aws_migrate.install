@@ -1,0 +1,49 @@
+<?php
+/**
+ * @file
+ * AWS Migrate install file functionality.
+ */
+
+/**
+ * 
+ * Implements hook_install().
+ */
+function aws_migrate_install() {
+  aws_migrate_field_config_update();
+  aws_migrate_file_managed_update();
+}
+
+/**
+ * Loop through each field's config (stored in the {field_config} table) and change the scheme to s3 if it's set to public
+ */
+function aws_migrate_field_config_update() {
+  $fields = array_keys(field_info_field_map());
+  foreach($fields as $field) {
+    $field = field_info_field($field);
+    if(($field['type'] == ('image' || 'file')) && ($field['settings']['uri_scheme'] = 'public')) {
+      $field['settings']['uri_scheme'] = 's3';
+      field_update_field($field);
+    }
+  }
+}
+
+/**
+ * Update the {file_managed} table to set the uri to s3:// where it starts with public://
+ * 
+ * See https://api.drupal.org/api/drupal/includes!file.inc/function/file_load_multiple/7
+ */
+function aws_migrate_file_managed_update(){
+  // TODO: $fids should use an EntityFieldQuery to get a list of fids
+  $fids = new EntityFieldQuery();
+  $fids->entityCondition('entity_type', 'file');
+  //commenting out propertyCondition because it doesn't seem to return anything
+  // sure would like to get it to work to trim down the number of entities to loop through
+//    ->propertyCondition('uri', 'public://%', 'LIKE') 
+  $result = array_keys($fids->execute());
+  foreach($result as $fid) {
+    $file = file_load($fid);
+    // guessing here on $file->uri
+    $file->uri = preg_replace('/^public:\/\/', 's3://', $file);
+    file_save($file);
+  }
+}
