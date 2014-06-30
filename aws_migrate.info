@@ -1,0 +1,6 @@
+name = AWS Migrate
+description = Helper module to ease migration to AWS Elastic Beanstalk hosting
+core = 7.x
+package = Stanford
+version = 7.x-1.x-dev
+project = aws_migrate
