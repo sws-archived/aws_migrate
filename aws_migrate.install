@@ -34,13 +34,12 @@ function aws_migrate_field_config_update() {
  */
 function aws_migrate_file_managed_update(){
   // TODO: $fids should use an EntityFieldQuery to get a list of fids
-  $fids = new EntityFieldQuery();
-  $fids->entityCondition('entity_type', 'file');
-  //commenting out propertyCondition because it doesn't seem to return anything
-  // sure would like to get it to work to trim down the number of entities to loop through
-//    ->propertyCondition('uri', 'public://%', 'LIKE') 
-  $result = array_keys($fids->execute());
-  foreach($result as $fid) {
+  $file_entities = new EntityFieldQuery();
+  $file_entities->entityCondition('entity_type', 'file')
+    ->propertyCondition('uri', 'public://%', 'CONTAINS');
+  $result = $file_entities->execute();
+  $fids = array_keys($result['file']);
+  foreach($fids as $fid) {
     $file = file_load($fid);
     // guessing here on $file->uri
     $file->uri = preg_replace('/^public:\/\/', 's3://', $file);
