@@ -11,6 +11,7 @@
 function aws_migrate_install() {
   aws_migrate_field_config_update();
   aws_migrate_file_managed_update();
+  aws_migrate_theme_settings_update();
 }
 
 /**
@@ -45,5 +46,21 @@ function aws_migrate_file_managed_update(){
     $file->uri = preg_replace('/^public:\/\//', 's3://', $file->uri);
     // save the file, natch.
     file_save($file);
+  }
+}
+
+/**
+ * Update the theme settings to point to s3:// instead of public://
+ */
+function aws_migrate_theme_settings_update(){
+  $theme_default = variable_get('theme_default');
+  $theme_settings = variable_get('theme_' . $theme_default . '_settings');
+  if($theme_settings != NULL) {
+    dpm($theme_settings);
+    $theme_settings['logo_path'] = preg_replace('/^public:\/\//', 's3://', $theme_settings['logo_path']);
+    $theme_settings['favicon_path'] = preg_replace('/^public:\/\//', 's3://', $theme_settings['favicon_path']);
+    $theme_settings['body_bg_path'] = preg_replace('/^public:\/\//', 's3://', $theme_settings['body_bg_path']);
+    variable_set('theme_' . $theme_default . '_settings', $theme_settings);
+    
   }
 }
