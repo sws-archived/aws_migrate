@@ -29,20 +29,21 @@ function aws_migrate_field_config_update() {
 
 /**
  * Update the {file_managed} table to set the uri to s3:// where it starts with public://
- * 
- * See https://api.drupal.org/api/drupal/includes!file.inc/function/file_load_multiple/7
  */
 function aws_migrate_file_managed_update(){
-  // TODO: $fids should use an EntityFieldQuery to get a list of fids
+  // Use EntityFieldQuery to get a bunch of file entities that have public:// as the URI scheme
   $file_entities = new EntityFieldQuery();
   $file_entities->entityCondition('entity_type', 'file')
-    ->propertyCondition('uri', 'public://%', 'CONTAINS');
+    ->propertyCondition('uri', 'public://%', 'LIKE');
   $result = $file_entities->execute();
+  // grab just the fid values
   $fids = array_keys($result['file']);
-  foreach($fids as $fid) {
+  foreach($fids as $key => $fid) {
+    // load the file object
     $file = file_load($fid);
-    // guessing here on $file->uri
-    $file->uri = preg_replace('/^public:\/\/', 's3://', $file);
+    // replace public:// with s3://
+    $file->uri = preg_replace('/^public:\/\//', 's3://', $file->uri);
+    // save the file, natch.
     file_save($file);
   }
 }
