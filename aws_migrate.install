@@ -20,7 +20,7 @@ function aws_migrate_field_config_update() {
   $fields = array_keys(field_info_field_map());
   foreach($fields as $field) {
     $field = field_info_field($field);
-    if(($field['type'] == ('image' || 'file')) && ($field['settings']['uri_scheme'] = 'public')) {
+    if(($field['type'] == ('image' || 'file')) && ($field['settings']['uri_scheme'] == 'public')) {
       $field['settings']['uri_scheme'] = 's3';
       field_update_field($field);
     }
