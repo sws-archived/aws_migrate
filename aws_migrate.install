@@ -56,7 +56,6 @@ function aws_migrate_theme_settings_update(){
   $theme_default = variable_get('theme_default');
   $theme_settings = variable_get('theme_' . $theme_default . '_settings');
   if($theme_settings != NULL) {
-    dpm($theme_settings);
     $theme_settings['logo_path'] = preg_replace('/^public:\/\//', 's3://', $theme_settings['logo_path']);
     $theme_settings['favicon_path'] = preg_replace('/^public:\/\//', 's3://', $theme_settings['favicon_path']);
     $theme_settings['body_bg_path'] = preg_replace('/^public:\/\//', 's3://', $theme_settings['body_bg_path']);
