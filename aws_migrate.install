@@ -5,24 +5,45 @@
  */
 
 /**
- * 
+ *
  * Implements hook_install().
  */
 function aws_migrate_install() {
-  aws_migrate_field_config_update();
-  aws_migrate_file_managed_update();
-  aws_migrate_theme_settings_update();
+  aws_migrate_field_config_update('install');
+  aws_migrate_file_managed_update('install');
+  aws_migrate_theme_settings_update('install');
+}
+
+/**
+ *
+ * Implements hook_uninstall().
+ */
+function aws_migrate_uninstall() {
+  aws_migrate_field_config_update('uninstall');
+  aws_migrate_file_managed_update('uninstall');
+  aws_migrate_theme_settings_update('uninstall');
 }
 
 /**
  * Loop through each field's config (stored in the {field_config} table) and change the scheme to s3 if it's set to public
+ * Vice versa on uninstall.
  */
-function aws_migrate_field_config_update() {
+function aws_migrate_field_config_update($op) {
+  switch($op){
+    case('install'):
+      $from = 'public';
+      $to = 's3';
+      break;
+    case('uninstall'):
+      $from = 's3';
+      $to = 'public';
+      break;
+  }
   $fields = array_keys(field_info_field_map());
   foreach($fields as $field) {
     $field = field_info_field($field);
-    if(($field['type'] == ('image' || 'file')) && ($field['settings']['uri_scheme'] == 'public')) {
-      $field['settings']['uri_scheme'] = 's3';
+    if(($field['type'] == ('image' || 'file')) && ($field['settings']['uri_scheme'] == $from)) {
+      $field['settings']['uri_scheme'] = $to;
       field_update_field($field);
     }
   }
@@ -30,12 +51,23 @@ function aws_migrate_field_config_update() {
 
 /**
  * Update the {file_managed} table to set the uri to s3:// where it starts with public://
+ * Vice versa on uninstall.
  */
-function aws_migrate_file_managed_update(){
+function aws_migrate_file_managed_update($op){
+  switch($op){
+    case('install'):
+      $from = 'public';
+      $to = 's3';
+      break;
+    case('uninstall'):
+      $from = 's3';
+      $to = 'public';
+      break;
+  }
   // Use EntityFieldQuery to get a bunch of file entities that have public:// as the URI scheme
   $file_entities = new EntityFieldQuery();
   $file_entities->entityCondition('entity_type', 'file')
-    ->propertyCondition('uri', 'public://%', 'LIKE');
+    ->propertyCondition('uri', $from . '://%', 'LIKE');
   $result = $file_entities->execute();
   // grab just the fid values
   $fids = array_keys($result['file']);
@@ -43,7 +75,7 @@ function aws_migrate_file_managed_update(){
     // load the file object
     $file = file_load($fid);
     // replace public:// with s3://
-    $file->uri = preg_replace('/^public:\/\//', 's3://', $file->uri);
+    $file->uri = preg_replace('/^' . $from .':\/\//', $to . '://', $file->uri);
     // save the file, natch.
     file_save($file);
   }
@@ -51,15 +83,26 @@ function aws_migrate_file_managed_update(){
 
 /**
  * Update the theme settings to point to s3:// instead of public://
+ * Vice versa on uninstall.
  */
-function aws_migrate_theme_settings_update(){
+function aws_migrate_theme_settings_update($op){
+  switch($op){
+    case('install'):
+      $from = 'public';
+      $to = 's3';
+      break;
+    case('uninstall'):
+      $from = 's3';
+      $to = 'public';
+      break;
+  }
   $theme_default = variable_get('theme_default');
   $theme_settings = variable_get('theme_' . $theme_default . '_settings');
   if($theme_settings != NULL) {
-    $theme_settings['logo_path'] = preg_replace('/^public:\/\//', 's3://', $theme_settings['logo_path']);
-    $theme_settings['favicon_path'] = preg_replace('/^public:\/\//', 's3://', $theme_settings['favicon_path']);
-    $theme_settings['body_bg_path'] = preg_replace('/^public:\/\//', 's3://', $theme_settings['body_bg_path']);
+    $theme_settings['logo_path'] = preg_replace('/^' . $from .':\/\//', $to . '://', $theme_settings['logo_path']);
+    $theme_settings['favicon_path'] = preg_replace('/^' . $from .':\/\//', $to . '://', $theme_settings['favicon_path']);
+    $theme_settings['body_bg_path'] = preg_replace('/^' . $from .':\/\//', $to . '://', $theme_settings['body_bg_path']);
     variable_set('theme_' . $theme_default . '_settings', $theme_settings);
-    
+
   }
 }

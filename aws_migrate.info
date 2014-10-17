@@ -1,5 +1,5 @@
 name = AWS Migrate
-description = Helper module to ease migration to AWS Elastic Beanstalk hosting
+description = Helper module to ease migration to AWS S3 file system. INSTALLING THIS MODULE WILL CONVERT YOUR PUBLIC FILE SYSTEM TO USE S3.
 core = 7.x
 package = Stanford
 version = 7.x-1.x-dev
